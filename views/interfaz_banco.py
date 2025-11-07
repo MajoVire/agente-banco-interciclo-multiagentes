@@ -83,7 +83,7 @@ class InterfazBanco:
 
         tk.Label(self.header_frame, text="🏢 BANCO ESTRELLA", 
                 font=("Arial", 20, "bold"), bg='#34495e', fg='white').pack(pady=10)
-        tk.Label(self.header_frame, text="Sistema de Gestión de Colas Inteligente", 
+        tk.Label(self.header_frame, text="Sistema de Gestión Bancaria - Simulación Inteligente", 
                 font=("Arial", 12), bg='#34495e', fg='#ecf0f1').pack(pady=(0, 10))
     
     def setup_paneles_principales(self):
