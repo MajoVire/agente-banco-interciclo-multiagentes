@@ -22,7 +22,7 @@ class InterfazBanco:
         self.setup_estilos()
         self.setup_imagenes()
         self.setup_banco()
-        self.setup_interfaz()  # ¡Este método ahora existe!
+        self.setup_interfaz()
         self.iniciar_simulacion()
     
     def setup_ventana_principal(self):
@@ -208,7 +208,7 @@ class InterfazBanco:
         tk.Label(controls_frame, text="CONTROLES", 
                 font=("Arial", 12, "bold"), bg='#34495e', fg='white').pack(pady=(0, 10))
 
-        # Botones de control
+        # Botones de control (SOLO los 2 botones principales)
         button_style = {'font': ('Arial', 10), 'width': 20, 'pady': 8}
 
         tk.Button(controls_frame, text="➕ Agregar Cliente Normal", 
@@ -219,17 +219,7 @@ class InterfazBanco:
                  command=self.agregar_prioritario_manual, bg='#e74c3c', fg='white',
                  **button_style).pack(fill=tk.X, pady=3)
 
-        tk.Button(controls_frame, text="⏸️ Pausar Simulación", 
-                 command=self.toggle_simulacion, bg='#f39c12', fg='white',
-                 **button_style).pack(fill=tk.X, pady=3)
-
-        tk.Button(controls_frame, text="🔧 Debug Fila", 
-                 command=self.mostrar_estado_fila, bg='#3498db', fg='white',
-                 **button_style).pack(fill=tk.X, pady=3)
-
-        tk.Button(controls_frame, text="🗑️ Limpiar Fila", 
-                 command=self.limpiar_fila, bg='#95a5a6', fg='white',
-                 **button_style).pack(fill=tk.X, pady=3)
+        # Los botones de "Pausar Simulación", "Debug Fila" y "Limpiar Fila" han sido eliminados
     
     def setup_logs(self):
         """Configura el área de logs"""
@@ -265,9 +255,6 @@ class InterfazBanco:
         self.log_text.tag_configure("limpieza", foreground="#c0392b")
         self.log_text.tag_configure("sistema", foreground="#f1c40f")
 
-    # ... (aquí van todos los demás métodos que ya tenías: actualizar_estadisticas, limpiar_fila, etc.)
-    # Solo copia los métodos que ya funcionaban de tu interfaz original
-
     def actualizar_estadisticas(self):
         """Actualizar las estadísticas en tiempo real"""
         ventanillas_libres = sum(1 for v in self.banco.ventanillas if v.estado == "libre")
@@ -281,28 +268,11 @@ class InterfazBanco:
         
         self.stats_label.config(text=stats_text)
 
-    def limpiar_fila(self):
-        """Limpiar la fila cuando sea muy larga"""
-        if len(self.banco.fila) > 25:
-            clientes_eliminados = len(self.banco.fila) - 15
-            self.banco.fila = self.banco.fila[:15]
-            self.banco.log.append(f"[LIMPIEZA] Fila limpiada: {clientes_eliminados} clientes eliminados. Manteniendo 15 en fila.")
-            
-            # Limpiar también la fila visual
-            for icon_id, texto_id, _ in self.personas_en_fila_gui[15:]:
-                self.canvas_fila.delete(icon_id)
-                self.canvas_fila.delete(texto_id)
-            self.personas_en_fila_gui = self.personas_en_fila_gui[:15]
-            self.actualizar_posiciones_fila()
-            self.actualizar_estadisticas()
+    # Eliminar el método limpiar_fila ya que no tenemos el botón
+    # def limpiar_fila(self):
 
-    def mostrar_estado_fila(self):
-        """Mostrar estado de debug de la fila"""
-        print("=== DEBUG FILA ===")
-        print(f"Fila lógica: {[p.id for p in self.banco.fila]}")
-        print(f"Fila visual IDs: {[p.id for _, _, p in self.personas_en_fila_gui]}")
-        print(f"Total en fila: {len(self.banco.fila)}")
-        print("=================")
+    # Eliminar el método mostrar_estado_fila ya que no tenemos el botón
+    # def mostrar_estado_fila(self):
 
     def agregar_cliente_manual(self):
         """Agregar cliente normal manualmente"""
@@ -318,16 +288,8 @@ class InterfazBanco:
         self.banco.agregar_persona(persona)
         self.actualizar_estadisticas()
 
-    def toggle_simulacion(self):
-        """Pausar o reanudar la simulación"""
-        self.simulacion_activa = not self.simulacion_activa
-        if self.simulacion_activa:
-            self.banco.log.append("[SISTEMA] Simulación REANUDADA")
-            self.iniciar_simulacion()
-        else:
-            self.banco.log.append("[SISTEMA] Simulación PAUSADA")
-        self.actualizar_log()
-        self.actualizar_estadisticas()
+    # Eliminar el método toggle_simulacion ya que no tenemos el botón
+    # def toggle_simulacion(self):
 
     def iniciar_simulacion(self):
         """Iniciar simulación automática"""
@@ -345,11 +307,27 @@ class InterfazBanco:
         persona = Persona(self.banco.contador_personas, prioridad)
         self.banco.agregar_persona(persona)
 
+        # Auto-limpiar si la fila es muy larga (mecanismo automático)
         if len(self.banco.fila) > 30:
-            self.limpiar_fila()
+            self.limpiar_fila_automatica()
 
         self.actualizar_estadisticas()
         self.root.after(random.randint(2000, 5000), self.generar_persona_aleatoria)
+
+    def limpiar_fila_automatica(self):
+        """Limpia la fila automáticamente cuando es muy larga"""
+        if len(self.banco.fila) > 30:
+            clientes_eliminados = len(self.banco.fila) - 15
+            self.banco.fila = self.banco.fila[:15]
+            self.banco.log.append(f"[SISTEMA] Fila limpiada automáticamente: {clientes_eliminados} clientes eliminados. Manteniendo 15 en fila.")
+            
+            # Limpiar también la fila visual
+            for icon_id, texto_id, _ in self.personas_en_fila_gui[15:]:
+                self.canvas_fila.delete(icon_id)
+                self.canvas_fila.delete(texto_id)
+            self.personas_en_fila_gui = self.personas_en_fila_gui[:15]
+            self.actualizar_posiciones_fila()
+            self.actualizar_estadisticas()
 
     def agregar_persona_a_fila_visual(self, persona):
         """Añadir persona a la fila visual"""
