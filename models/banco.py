@@ -91,7 +91,7 @@ class Banco:
         """
         if ventanilla.cliente:
             self.clientes_atendidos += 1
-            self.log.append(f"[ATENCION COMPLETADA] Cliente {ventanilla.cliente.id} finalizado en Ventanilla {ventanilla.id}")
+            self.log.append(f"[ATENCION COMPLETADA] Cliente {ventanilla.cliente.id} finalizado en Ventanilla {ventanilla.id} - {ventanilla.cliente.transaccion}")
             ventanilla.cliente.estado = "atendido"
         
         ventanilla.liberar()
@@ -161,7 +161,9 @@ class Banco:
                 self.interfaz.eliminar_persona_de_fila(cliente)
                 # Cambiar esta línea:
                 self.interfaz.iniciar_temporizador_ventanilla(ventanilla)
+                
     
     def __str__(self):
         """Representación en string del banco"""
         return f"Banco con {len(self.ventanillas)} ventanillas, {len(self.fila)} en fila"
+    
