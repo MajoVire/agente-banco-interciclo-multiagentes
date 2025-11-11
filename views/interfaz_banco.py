@@ -1,7 +1,7 @@
 import tkinter as tk
 import random
 import time
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 
 from models.banco import Banco
 from models.persona import Persona
@@ -14,9 +14,6 @@ class InterfazBanco:
     def __init__(self, root):
         """
         Inicializa la interfaz gráfica
-        
-        Args:
-            root (tk.Tk): Ventana principal de Tkinter
         """
         self.root = root
         self.setup_ventana_principal()
@@ -24,13 +21,15 @@ class InterfazBanco:
         self.setup_imagenes()
         self.setup_banco()
         self.setup_interfaz()
-        self.iniciar_simulacion()
-    
+        
+        # Control de escenario activo
+        self.escenario_activo = None  # None, "con_prioridad", "sin_prioridad"
+        self.simulacion_activa = False
+
     def setup_ventana_principal(self):
         """Configura la ventana principal"""
         self.root.title("Sistema de Gestión Bancaria - Simulación Inteligente")
         self.root.geometry("1400x900")
-        self.root.resizable(True, True)
         self.root.configure(bg='#2c3e50')
     
     def setup_estilos(self):
@@ -48,8 +47,9 @@ class InterfazBanco:
     
     def setup_imagenes(self):
         """Carga y configura las imágenes con manejo robusto de errores"""
+        # Configuración de tamaños
         self.TAMANO_CLIENTE = (30, 30)
-        self.TAMANO_PRIORITARIO = (30,30)
+        self.TAMANO_PRIORITARIO = (30, 30)
         self.TAMANO_VENTANILLA = (60, 60)
         self.TAMANO_CELULAR = (140, 220)
         
@@ -63,11 +63,15 @@ class InterfazBanco:
         
         for ruta, nombre in imagenes_info:
             try:
+                # Determinar tamaño según tipo de imagen
+                if nombre == 'celular':
+                    tamaño = self.TAMANO_CELULAR
+                else:
+                    tamaño = getattr(self, f'TAMANO_{nombre.upper()}')
+                
+                # Cargar y redimensionar imagen
                 imagen = Image.open(ruta)
-                imagen_redimensionada = imagen.resize(
-                    getattr(self, f'TAMANO_{nombre.upper()}') 
-                    if nombre != 'celular' else self.TAMANO_CELULAR
-                )
+                imagen_redimensionada = imagen.resize(tamaño)
                 imagen_tk = ImageTk.PhotoImage(imagen_redimensionada)
                 setattr(self, f'img_{nombre}', imagen_tk)
                 print(f"✅ Imagen {ruta} cargada correctamente")
@@ -81,33 +85,25 @@ class InterfazBanco:
 
     def crear_placeholder_imagen(self, tipo_imagen):
         """Crea placeholders con colores diferentes para cada tipo"""
-        colores = {
+        colores_placeholder = {
             'cliente': '#3498db',      # Azul
             'prioritario': '#e74c3c',  # Rojo
             'ventanilla': '#27ae60',   # Verde
             'celular': '#9b59b6'       # Púrpura
         }
         
-        color = colores.get(tipo_imagen, '#95a5a6')
-        
-        if tipo_imagen == 'celular':
-            tamaño = self.TAMANO_CELULAR
-        else:
-            tamaño = self.TAMANO_CLIENTE
+        color = colores_placeholder.get(tipo_imagen, '#95a5a6')
+        tamaño = self.TAMANO_CELULAR if tipo_imagen == 'celular' else self.TAMANO_CLIENTE
         
         # Crear imagen de color sólido
         imagen = Image.new('RGB', tamaño, color)
         
         # Agregar texto identificador
-        from PIL import ImageDraw, ImageFont
         draw = ImageDraw.Draw(imagen)
-        
         try:
-            # Intentar usar una fuente más pequeña
-            font = ImageFont.load_default()
             texto = tipo_imagen.upper()[:3]
-            draw.text((tamaño[0]//2, tamaño[1]//2), texto, fill='white', anchor='mm', font=font)
-        except:
+            draw.text((tamaño[0]//2, tamaño[1]//2), texto, fill='white', anchor='mm')
+        except Exception:
             pass
         
         imagen_tk = ImageTk.PhotoImage(imagen)
@@ -118,7 +114,6 @@ class InterfazBanco:
         """Inicializa el sistema bancario"""
         self.banco = Banco(n_ventanillas=3, interfaz=self)
         self.personas_en_fila_gui = []
-        self.simulacion_activa = True
         self.ventanillas_gui = []
         self.dispositivos_moviles = []
     
@@ -129,7 +124,6 @@ class InterfazBanco:
         self.setup_panel1_ventanillas()
         self.setup_panel2_fila_notificaciones()
         self.setup_panel3_estadisticas_controles()
-        self.setup_logs()
         self.setup_log_tags()
     
     def setup_header(self):
@@ -143,7 +137,7 @@ class InterfazBanco:
                 font=("Arial", 12), bg='#34495e', fg='#ecf0f1').pack(pady=(0, 10))
     
     def setup_paneles_principales(self):
-        """Configura los paneles principales según la nueva estructura"""
+        """Configura los paneles principales"""
         main_frame = tk.Frame(self.root, bg='#2c3e50')
         main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
@@ -169,64 +163,75 @@ class InterfazBanco:
         ventanillas_frame = tk.Frame(self.panel1, bg='#34495e')
         ventanillas_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        for i, vent in enumerate(self.banco.ventanillas):
-            vent_frame = tk.Frame(ventanillas_frame, bg='#2c3e50', relief='solid', bd=1)
-            vent_frame.pack(fill=tk.X, padx=10, pady=10)
-            
-            card_frame = tk.Frame(vent_frame, bg='white', relief='raised', bd=2)
-            card_frame.pack(fill=tk.X, padx=8, pady=8)
-            
-            header_vent = tk.Frame(card_frame, bg='#3498db', height=30)
-            header_vent.pack(fill=tk.X)
-            header_vent.pack_propagate(False)
-            
-            tk.Label(header_vent, text=f"Ventanilla {vent.id}", 
-                    font=("Arial", 12, "bold"), bg='#3498db', fg='white').pack(expand=True)
-            
-            content_vent = tk.Frame(card_frame, bg='white', height=100)
-            content_vent.pack(fill=tk.X, padx=8, pady=8)
-            content_vent.pack_propagate(False)
-            
-            img_frame = tk.Frame(content_vent, bg='white', width=80)
-            img_frame.pack(side=tk.LEFT, fill=tk.Y)
-            img_frame.pack_propagate(False)
-            
-            img_label = tk.Label(img_frame, image=self.img_ventanilla, bg='white')
-            img_label.pack(expand=True, padx=5)
-            
-            info_frame = tk.Frame(content_vent, bg='white')
-            info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(15, 0))
-            
-            estado_label = tk.Label(info_frame, text="LIBRE", 
-                                  font=("Arial", 11, "bold"), bg='white', fg='#27ae60',
-                                  justify=tk.LEFT)
-            estado_label.pack(anchor=tk.W, pady=(0, 3))
-            
-            cliente_label = tk.Label(info_frame, text="", 
-                                   font=("Arial", 10), bg='white', fg='#7f8c8d',
-                                   justify=tk.LEFT)
-            cliente_label.pack(anchor=tk.W, pady=(0, 3))
-            
-            transaccion_label = tk.Label(info_frame, text="", 
-                                       font=("Arial", 9), bg='white', fg='#9b59b6',
-                                       justify=tk.LEFT, wraplength=250)
-            transaccion_label.pack(anchor=tk.W, pady=(0, 3))
-            
-            tiempo_label = tk.Label(info_frame, text="", 
-                                  font=("Arial", 9), bg='white', fg='#e74c3c',
-                                  justify=tk.LEFT)
-            tiempo_label.pack(anchor=tk.W)
-            
-            self.ventanillas_gui.append({
-                'frame': card_frame,
-                'header': header_vent,
-                'estado': estado_label,
-                'cliente': cliente_label,
-                'transaccion': transaccion_label,
-                'tiempo': tiempo_label,
-                'imagen': img_label,
-                'ventanilla': vent
-            })
+        # Crear interfaz para cada ventanilla
+        for ventanilla in self.banco.ventanillas:
+            self._crear_ventanilla_gui(ventanilla, ventanillas_frame)
+    
+    def _crear_ventanilla_gui(self, ventanilla, parent_frame):
+        """Crea la interfaz gráfica para una ventanilla individual"""
+        vent_frame = tk.Frame(parent_frame, bg='#2c3e50', relief='solid', bd=1)
+        vent_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        card_frame = tk.Frame(vent_frame, bg='white', relief='raised', bd=2)
+        card_frame.pack(fill=tk.X, padx=8, pady=8)
+        
+        # Header de la ventanilla
+        header_vent = tk.Frame(card_frame, bg='#3498db', height=30)
+        header_vent.pack(fill=tk.X)
+        header_vent.pack_propagate(False)
+        
+        tk.Label(header_vent, text=f"Ventanilla {ventanilla.id}", 
+                font=("Arial", 12, "bold"), bg='#3498db', fg='white').pack(expand=True)
+        
+        # Contenido de la ventanilla
+        content_vent = tk.Frame(card_frame, bg='white', height=100)
+        content_vent.pack(fill=tk.X, padx=8, pady=8)
+        content_vent.pack_propagate(False)
+        
+        # Imagen de la ventanilla
+        img_frame = tk.Frame(content_vent, bg='white', width=80)
+        img_frame.pack(side=tk.LEFT, fill=tk.Y)
+        img_frame.pack_propagate(False)
+        
+        img_label = tk.Label(img_frame, image=self.img_ventanilla, bg='white')
+        img_label.pack(expand=True, padx=5)
+        
+        # Información de la ventanilla
+        info_frame = tk.Frame(content_vent, bg='white')
+        info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(15, 0))
+        
+        # Labels para mostrar información
+        estado_label = tk.Label(info_frame, text="LIBRE", 
+                              font=("Arial", 11, "bold"), bg='white', fg='#27ae60',
+                              justify=tk.LEFT)
+        estado_label.pack(anchor=tk.W, pady=(0, 3))
+        
+        cliente_label = tk.Label(info_frame, text="", 
+                               font=("Arial", 10), bg='white', fg='#7f8c8d',
+                               justify=tk.LEFT)
+        cliente_label.pack(anchor=tk.W, pady=(0, 3))
+        
+        transaccion_label = tk.Label(info_frame, text="", 
+                                   font=("Arial", 9), bg='white', fg='#9b59b6',
+                                   justify=tk.LEFT, wraplength=250)
+        transaccion_label.pack(anchor=tk.W, pady=(0, 3))
+        
+        tiempo_label = tk.Label(info_frame, text="", 
+                              font=("Arial", 9), bg='white', fg='#e74c3c',
+                              justify=tk.LEFT)
+        tiempo_label.pack(anchor=tk.W)
+        
+        # Almacenar referencia a los elementos GUI de la ventanilla
+        self.ventanillas_gui.append({
+            'frame': card_frame,
+            'header': header_vent,
+            'estado': estado_label,
+            'cliente': cliente_label,
+            'transaccion': transaccion_label,
+            'tiempo': tiempo_label,
+            'imagen': img_label,
+            'ventanilla': ventanilla
+        })
     
     def setup_panel2_fila_notificaciones(self):
         """Configura el PANEL 2: Fila de clientes + Notificaciones móviles"""
@@ -238,6 +243,7 @@ class InterfazBanco:
         tk.Label(fila_frame, text="FILA DE CLIENTES", 
                 font=("Arial", 14, "bold"), bg='#34495e', fg='white').pack(pady=(0, 10))
 
+        # Canvas para mostrar la fila con scroll horizontal
         fila_canvas_frame = tk.Frame(fila_frame, bg='#ecf0f1', relief='sunken', bd=2)
         fila_canvas_frame.pack(fill=tk.X, pady=5)
 
@@ -249,18 +255,30 @@ class InterfazBanco:
         self.canvas_fila.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.h_scrollbar.config(command=self.canvas_fila.xview)
 
-        legend_frame = tk.Frame(fila_frame, bg='#34495e')
-        legend_frame.pack(fill=tk.X, pady=5)
-        
-        tk.Label(legend_frame, text="Leyenda: ", font=("Arial", 9), bg='#34495e', fg='white').pack(side=tk.LEFT)
-        tk.Label(legend_frame, text="● Normal", font=("Arial", 9), bg='#34495e', fg='black').pack(side=tk.LEFT, padx=5)
-        tk.Label(legend_frame, text="● Prioritario", font=("Arial", 9), bg='#34495e', fg='red').pack(side=tk.LEFT, padx=5)
+        # Leyenda de colores
+        self._crear_leyenda_fila(fila_frame)
 
         # Separador
         separator = tk.Frame(self.panel2, height=2, bg='#7f8c8d')
         separator.pack(fill=tk.X, padx=20, pady=10)
 
         # Sección NOTIFICACIONES MÓVILES
+        self._setup_notificaciones_moviles()
+    
+    def _crear_leyenda_fila(self, parent_frame):
+        """Crea la leyenda para los tipos de clientes en la fila"""
+        legend_frame = tk.Frame(parent_frame, bg='#34495e')
+        legend_frame.pack(fill=tk.X, pady=5)
+        
+        tk.Label(legend_frame, text="Leyenda: ", font=("Arial", 9), 
+                bg='#34495e', fg='white').pack(side=tk.LEFT)
+        tk.Label(legend_frame, text="● Normal", font=("Arial", 9), 
+                bg='#34495e', fg='black').pack(side=tk.LEFT, padx=5)
+        tk.Label(legend_frame, text="● Prioritario", font=("Arial", 9), 
+                bg='#34495e', fg='red').pack(side=tk.LEFT, padx=5)
+    
+    def _setup_notificaciones_moviles(self):
+        """Configura la sección de notificaciones móviles"""
         notif_frame = tk.Frame(self.panel2, bg='#34495e')
         notif_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
 
@@ -270,49 +288,55 @@ class InterfazBanco:
         dispositivos_frame = tk.Frame(notif_frame, bg='#34495e')
         dispositivos_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        self.dispositivos_moviles = []
+        # Crear dispositivos móviles para cada ventanilla
         for i in range(3):
-            dispositivo_frame = tk.Frame(dispositivos_frame, bg='#34495e')
-            dispositivo_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=8)
-            
-            tk.Label(dispositivo_frame, text=f"Ventanilla {i+1}", 
-                    font=("Arial", 11, "bold"), bg='#34495e', fg='white').pack(pady=(0, 8))
-            
-            celular_frame = tk.Frame(dispositivo_frame, bg='#1a1a1a', relief='sunken', bd=3, 
-                                   width=160, height=240)
-            celular_frame.pack(pady=5)
-            celular_frame.pack_propagate(False)
+            self._crear_dispositivo_movil(dispositivos_frame, i + 1)
+    
+    def _crear_dispositivo_movil(self, parent_frame, ventanilla_id):
+        """Crea un dispositivo móvil para una ventanilla específica"""
+        dispositivo_frame = tk.Frame(parent_frame, bg='#34495e')
+        dispositivo_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=8)
+        
+        # Etiqueta de la ventanilla
+        tk.Label(dispositivo_frame, text=f"Ventanilla {ventanilla_id}", 
+                font=("Arial", 11, "bold"), bg='#34495e', fg='white').pack(pady=(0, 8))
+        
+        # Simulación de dispositivo móvil
+        celular_frame = tk.Frame(dispositivo_frame, bg='#1a1a1a', relief='sunken', bd=3, 
+                               width=160, height=240)
+        celular_frame.pack(pady=5)
+        celular_frame.pack_propagate(False)
 
-            celular_display = tk.Frame(celular_frame, bg='#2c3e50')
-            celular_display.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
+        celular_display = tk.Frame(celular_frame, bg='#2c3e50')
+        celular_display.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)
 
-            notif_celular_frame = tk.Frame(celular_display, bg='#ecf0f1')
-            notif_celular_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        notif_celular_frame = tk.Frame(celular_display, bg='#ecf0f1')
+        notif_celular_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
-            notificacion_label = tk.Label(notif_celular_frame, 
-                                        text="Esperando...",
-                                        font=("Arial", 9),
-                                        bg='#ecf0f1', fg='#7f8c8d',
-                                        wraplength=130,
-                                        justify=tk.LEFT)
-            notificacion_label.pack(expand=True, padx=5, pady=5)
+        # Label para mostrar notificaciones
+        notificacion_label = tk.Label(notif_celular_frame, 
+                                    text="Esperando...",
+                                    font=("Arial", 9),
+                                    bg='#ecf0f1', fg='#7f8c8d',
+                                    wraplength=130,
+                                    justify=tk.LEFT)
+        notificacion_label.pack(expand=True, padx=5, pady=5)
 
-            estado_label = tk.Label(dispositivo_frame, text="🟢 Listo",
-                                  font=("Arial", 9),
-                                  bg='#34495e', fg='#27ae60')
-            estado_label.pack(pady=5)
+        # Estado del dispositivo
+        estado_label = tk.Label(dispositivo_frame, text="🟢 Listo",
+                              font=("Arial", 9),
+                              bg='#34495e', fg='#27ae60')
+        estado_label.pack(pady=5)
 
-            self.dispositivos_moviles.append({
-                'frame': dispositivo_frame,
-                'celular': celular_frame,
-                'notificacion': notificacion_label,
-                'estado': estado_label,
-                'ventanilla_id': i + 1,
-                'ultima_notificacion': None
-            })
-
-        self.contador_notif_frame = tk.Frame(notif_frame, bg='#34495e')
-        self.contador_notif_frame.pack(fill=tk.X, pady=10)
+        # Almacenar referencia al dispositivo
+        self.dispositivos_moviles.append({
+            'frame': dispositivo_frame,
+            'celular': celular_frame,
+            'notificacion': notificacion_label,
+            'estado': estado_label,
+            'ventanilla_id': ventanilla_id,
+            'ultima_notificacion': None
+        })
     
     def setup_panel3_estadisticas_controles(self):
         """Configura el PANEL 3: Estadísticas + Controles"""
@@ -334,27 +358,37 @@ class InterfazBanco:
         separator.pack(fill=tk.X, padx=20, pady=10)
 
         # Sección CONTROLES
+        self._setup_controles()
+    
+    def _setup_controles(self):
+        """Configura los botones de control"""
         controls_frame = tk.Frame(self.panel3, bg='#34495e')
         controls_frame.pack(fill=tk.X, padx=15, pady=15)
 
         tk.Label(controls_frame, text="CONTROLES", 
                 font=("Arial", 14, "bold"), bg='#34495e', fg='white').pack(pady=(0, 15))
 
-        button_style = {'font': ('Arial', 11), 'width': 22, 'pady': 10}
+        # Estilo para botones de demostración
+        demo_button_style = {'font': ('Arial', 10), 'width': 22, 'pady': 8}
 
-        tk.Button(controls_frame, text="➕ Agregar Cliente Normal", 
-                 command=self.agregar_cliente_manual, bg='#27ae60', fg='white',
-                 **button_style).pack(fill=tk.X, pady=8)
+        # Botones de demostración
+        tk.Button(controls_frame, text="🎭 Demo: Escenario 1 - Con Prioridad", 
+                command=self.demo_escenario_1, bg='#9b59b6', fg='white',
+                **demo_button_style).pack(fill=tk.X, pady=8)
 
-        tk.Button(controls_frame, text="🎯 Agregar Prioritario", 
-                 command=self.agregar_prioritario_manual, bg='#e74c3c', fg='white',
-                 **button_style).pack(fill=tk.X, pady=8)
+        tk.Button(controls_frame, text="🎭 Demo: Escenario 2 - Sin Prioridad", 
+                command=self.demo_escenario_2, bg='#3498db', fg='white',
+                **demo_button_style).pack(fill=tk.X, pady=8)
 
         # Separador para el registro de actividad
         separator2 = tk.Frame(self.panel3, height=2, bg='#7f8c8d')
         separator2.pack(fill=tk.X, padx=20, pady=15)
 
-        # Sección REGISTRO DE ACTIVIDAD en el panel 3
+        # Sección REGISTRO DE ACTIVIDAD
+        self._setup_registro_actividad()
+    
+    def _setup_registro_actividad(self):
+        """Configura el área de registro de actividad"""
         log_frame = tk.Frame(self.panel3, bg='#34495e')
         log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
 
@@ -373,49 +407,45 @@ class InterfazBanco:
         self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         log_scrollbar.config(command=self.log_text.yview)
 
-    def setup_logs(self):
-        """Configura el área de logs (ya está en setup_panel3_estadisticas_controles)"""
-        pass
-    
     def setup_log_tags(self):
         """Configura los colores para el registro de actividad"""
-        self.log_text.tag_configure("entrada", foreground="#3498db")
-        self.log_text.tag_configure("asignacion", foreground="#27ae60")
-        self.log_text.tag_configure("atencion", foreground="#9b59b6")
-        self.log_text.tag_configure("prioridad", foreground="#e67e22")
-        self.log_text.tag_configure("disponible", foreground="#2ecc71")
-        self.log_text.tag_configure("descanso", foreground="#95a5a6")
-        self.log_text.tag_configure("espera", foreground="#d35400")
-        self.log_text.tag_configure("error", foreground="#e74c3c")
-        self.log_text.tag_configure("limpieza", foreground="#c0392b")
-        self.log_text.tag_configure("sistema", foreground="#f1c40f")
-        self.log_text.tag_configure("notificacion", foreground="#9b59b6")
+        tags_config = {
+            "entrada": "#3498db",
+            "asignacion": "#27ae60", 
+            "atencion": "#9b59b6",
+            "prioridad": "#e67e22",
+            "disponible": "#2ecc71",
+            "descanso": "#95a5a6",
+            "espera": "#d35400",
+            "error": "#e74c3c",
+            "limpieza": "#c0392b",
+            "sistema": "#f1c40f",
+            "notificacion": "#9b59b6"
+        }
+        
+        for tag, color in tags_config.items():
+            self.log_text.tag_configure(tag, foreground=color)
 
-    # Los métodos restantes se mantienen igual...
     def actualizar_estadisticas(self):
-        """Actualizar las estadísticas en tiempo real"""
+        """Actualiza las estadísticas en tiempo real"""
         ventanillas_libres = sum(1 for v in self.banco.ventanillas if v.estado == "libre")
         en_fila = len(self.banco.fila)
         atendidos = self.banco.clientes_atendidos
         
-        stats_text = f"Ventanillas libres: {ventanillas_libres}/3\n"
-        stats_text += f"Clientes en fila: {en_fila}\n"
-        stats_text += f"Clientes atendidos: {atendidos}\n"
-        
+        stats_text = (f"Ventanillas libres: {ventanillas_libres}/3\n"
+                     f"Clientes en fila: {en_fila}\n"
+                     f"Clientes atendidos: {atendidos}")
         
         self.stats_label.config(text=stats_text)
-      
 
     def enviar_notificacion(self, cliente, ventanilla_id):
         """Envía notificación al dispositivo específico de la ventanilla"""
-        dispositivo = None
-        for disp in self.dispositivos_moviles:
-            if disp['ventanilla_id'] == ventanilla_id:
-                dispositivo = disp
-                break
+        dispositivo = next((disp for disp in self.dispositivos_moviles 
+                          if disp['ventanilla_id'] == ventanilla_id), None)
         
         if dispositivo:
-            mensaje = f"✅ Transacción completada\nCliente: {cliente.id}\nTransacción: {cliente.transaccion}\nVentanilla: {ventanilla_id}\n¡Gracias!"
+            mensaje = (f"✅ Transacción completada\nCliente: {cliente.id}\n"
+                      f"Transacción: {cliente.transaccion}\nVentanilla: {ventanilla_id}\n¡Gracias!")
             
             dispositivo['notificacion'].config(text=mensaje, fg='#27ae60')
             dispositivo['estado'].config(text="🔔 Notificado", fg='#9b59b6')
@@ -429,6 +459,7 @@ class InterfazBanco:
             
             self.actualizar_estadisticas()
             
+            # Limpiar notificación después de 8 segundos
             self.root.after(8000, lambda: self.limpiar_notificacion_dispositivo(ventanilla_id))
     
     def limpiar_notificacion_dispositivo(self, ventanilla_id):
@@ -439,49 +470,131 @@ class InterfazBanco:
                 disp['estado'].config(text="🟢 Listo", fg='#27ae60')
                 break
 
-    def agregar_cliente_manual(self):
-        """Agregar cliente normal manualmente"""
-        self.banco.contador_personas += 1
-        persona = Persona(self.banco.contador_personas, prioridad=False)
-        self.banco.agregar_persona(persona)
+    def demo_escenario_1(self):
+        """Demostración del Escenario 1: Atención con prioridad - Clientes mezclados"""
+        self.reiniciar_sistema()
+        self.escenario_activo = "con_prioridad"
+        
+        # Log de inicio
+        self.banco.log.extend([
+            "[DEMO] 🎭 INICIANDO ESCENARIO 1: ATENCIÓN CON PRIORIDAD",
+            "        📝 Clientes normales + prioritarios en fila", 
+            "        🎯 Prioritarios avanzan al frente"
+        ])
+        
+        # Iniciar simulación
+        self.simulacion_activa = True
+        self.iniciar_simulacion()
+        
+        # Agregar clientes MEZCLADOS para el escenario 1
+        tipos_clientes = [False, False, True, False]  # Normal, Normal, Prioritario, Normal
+        for prioridad in tipos_clientes:
+            self.banco.contador_personas += 1
+            cliente = Persona(self.banco.contador_personas, prioridad)
+            self.banco.agregar_persona(cliente)
+        
         self.actualizar_estadisticas()
+        self.actualizar_log()
 
-    def agregar_prioritario_manual(self):
-        """Agregar cliente prioritario manualmente"""
-        self.banco.contador_personas += 1
-        persona = Persona(self.banco.contador_personas, prioridad=True)
-        self.banco.agregar_persona(persona)
+    def demo_escenario_2(self):
+        """Demostración del Escenario 2: Atención sin prioridad - SOLO normales"""
+        self.reiniciar_sistema()
+        self.escenario_activo = "sin_prioridad"
+        
+        # Log de inicio
+        self.banco.log.extend([
+            "[DEMO] 🎭 INICIANDO ESCENARIO 2: ATENCIÓN SIN PRIORIDAD",
+            "        📝 Solo clientes normales en fila",
+            "        🔄 Orden estricto FIFO (primero en llegar, primero en ser atendido)"
+        ])
+        
+        # Iniciar simulación
+        self.simulacion_activa = True
+        self.iniciar_simulacion()
+        
+        # Agregar SOLO clientes NORMALES para el escenario 2
+        for _ in range(4):
+            self.banco.contador_personas += 1
+            cliente = Persona(self.banco.contador_personas, prioridad=False)
+            self.banco.agregar_persona(cliente)
+        
         self.actualizar_estadisticas()
+        self.actualizar_log()
 
     def iniciar_simulacion(self):
-        """Iniciar simulación automática"""
-        if not self.simulacion_activa:
-            return
-        delay_llegada = random.randint(2000, 5000)
-        self.root.after(delay_llegada, self.generar_persona_aleatoria)
+        """Inicia simulación automática"""
+        if self.simulacion_activa:
+            delay_llegada = random.randint(2000, 5000)
+            self.root.after(delay_llegada, self.generar_persona_aleatoria)
 
     def generar_persona_aleatoria(self):
-        """Generar cliente aleatorio"""
+        """Genera cliente aleatorio - Controlado por escenario"""
         if not self.simulacion_activa:
             return
+            
         self.banco.contador_personas += 1
-        prioridad = random.choice([False, False, False, True])
+        
+        # Controlar prioridad según escenario
+        if self.escenario_activo == "sin_prioridad":
+            prioridad = False  # Solo normales
+        else:
+            prioridad = random.choice([False, False, False, True])  # 75% normales, 25% prioritarios
+        
+        tipo = "PRIORITARIO" if prioridad else "NORMAL"
+        self.banco.log.append(f"[GENERACION] ➕ Cliente {self.banco.contador_personas} ({tipo}) generado automáticamente")
+        
         persona = Persona(self.banco.contador_personas, prioridad)
         self.banco.agregar_persona(persona)
 
+        # Limpiar fila si es muy larga
         if len(self.banco.fila) > 30:
             self.limpiar_fila_automatica()
 
         self.actualizar_estadisticas()
-        self.root.after(random.randint(2000, 5000), self.generar_persona_aleatoria)
+        
+        # Programar siguiente generación
+        if self.simulacion_activa:
+            self.root.after(random.randint(2000, 5000), self.generar_persona_aleatoria)
+
+    def reiniciar_sistema(self):
+        """Reinicia completamente el sistema para empezar desde cero"""
+        # Detener simulación actual
+        self.simulacion_activa = False
+        
+        # Reiniciar banco
+        self.banco.fila.clear()
+        self.banco.contador_personas = 0
+        self.banco.clientes_atendidos = 0
+        
+        # Limpiar logs
+        self.banco.log.clear()
+        self.banco.log.append("[SISTEMA] 🔄 SISTEMA REINICIADO")
+        self.banco.log.append("[SISTEMA] 📊 Empezando desde Cliente 1")
+        
+        # Liberar todas las ventanillas
+        for ventanilla in self.banco.ventanillas:
+            ventanilla.ocupada = False
+            ventanilla.cliente = None
+            ventanilla.tiempo_restante = 0
+            ventanilla.estado = "libre"
+        
+        # Limpiar interfaz visual
+        self.limpiar_interfaz_visual()
+        
+        # Reiniciar escenario activo
+        self.escenario_activo = None
+        
+        # Actualizar estadísticas
+        self.actualizar_estadisticas()
 
     def limpiar_fila_automatica(self):
         """Limpia la fila automáticamente cuando es muy larga"""
-        if len(self.banco.fila) > 30:
+        if self.simulacion_activa and len(self.banco.fila) > 30:
             clientes_eliminados = len(self.banco.fila) - 15
             self.banco.fila = self.banco.fila[:15]
             self.banco.log.append(f"[SISTEMA] Fila limpiada automáticamente: {clientes_eliminados} clientes eliminados. Manteniendo 15 en fila.")
             
+            # Limpiar elementos visuales
             for icon_id, texto_id, _ in self.personas_en_fila_gui[15:]:
                 self.canvas_fila.delete(icon_id)
                 self.canvas_fila.delete(texto_id)
@@ -489,14 +602,36 @@ class InterfazBanco:
             self.actualizar_posiciones_fila()
             self.actualizar_estadisticas()
 
+    def limpiar_interfaz_visual(self):
+        """Limpia todos los elementos visuales de la interfaz"""
+        # Limpiar fila visual
+        for icon_id, texto_id, _ in self.personas_en_fila_gui:
+            self.canvas_fila.delete(icon_id)
+            self.canvas_fila.delete(texto_id)
+        self.personas_en_fila_gui.clear()
+        
+        # Limpiar notificaciones de dispositivos móviles
+        for dispositivo in self.dispositivos_moviles:
+            dispositivo['notificacion'].config(text="Esperando...", fg='#7f8c8d')
+            dispositivo['estado'].config(text="🟢 Listo", fg='#27ae60')
+            dispositivo['ultima_notificacion'] = None
+        
+        # Actualizar estado de ventanillas
+        self.actualizar_estado_ventanillas()
+        
+        # Actualizar logs
+        self.actualizar_log()
+
     def agregar_persona_a_fila_visual(self, persona):
-        """Añadir persona a la fila visual"""
+        """Añade persona a la fila visual"""
         x = 50 + len(self.personas_en_fila_gui) * 45
         y = 40
         
+        # Seleccionar imagen según prioridad
         imagen = self.img_prioritario if persona.prioridad else self.img_cliente
         icon_id = self.canvas_fila.create_image(x, y, image=imagen)
         
+        # Crear texto con color según prioridad
         color = "red" if persona.prioridad else "black"
         texto_id = self.canvas_fila.create_text(x, y + 25, text=f"{persona.id}", 
                                               font=("Arial", 8, "bold"), fill=color)
@@ -508,7 +643,7 @@ class InterfazBanco:
         self.canvas_fila.configure(scrollregion=self.canvas_fila.bbox("all"))
 
     def eliminar_persona_de_fila(self, persona):
-        """Eliminar persona de la fila visual"""
+        """Elimina persona de la fila visual"""
         for i, (icon_id, texto_id, p) in enumerate(self.personas_en_fila_gui):
             if p.id == persona.id:
                 self.canvas_fila.delete(icon_id)
@@ -522,7 +657,7 @@ class InterfazBanco:
         self.banco.log.append(f"[ERROR] No se encontró cliente {persona.id} en fila visual")
 
     def actualizar_posiciones_fila(self):
-        """Reorganizar posiciones en la fila visual"""
+        """Reorganiza posiciones en la fila visual"""
         for i, (icon_id, texto_id, persona) in enumerate(self.personas_en_fila_gui):
             x = 50 + i * 45
             y = 40

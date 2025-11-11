@@ -21,6 +21,13 @@ class Banco:
         self.interfaz = interfaz
         self.contador_personas = 0
         self.clientes_atendidos = 0
+        
+        # ✅ AGREGAR MENSAJE INICIAL
+        self.log.append("[SISTEMA] 🏦 BIENVENIDO AL SISTEMA DE GESTIÓN BANCARIA")
+        self.log.append("[SISTEMA] 📋 SELECCIONE UN ESCENARIO DE DEMOSTRACIÓN:")
+        self.log.append("[SISTEMA]   1. 🎭 Demo: Escenario 1 - Con prioridad")
+        self.log.append("[SISTEMA]   2. 🎭 Demo: Escenario 2 - Sin prioridad")
+        self.log.append("[SISTEMA]   ⏳ Esperando selección...")
     
     def agregar_persona(self, persona):
         """
@@ -134,36 +141,7 @@ class Banco:
         if self.interfaz:
             self.interfaz.actualizar_estado_ventanillas()
             self.interfaz.actualizar_log()
-            
-    def asignar(self):
-        """Asigna clientes a ventanillas libres respetando prioridades"""
-        ventanillas_libres = [v for v in self.ventanillas if v.esta_libre()]
-        
-        if not ventanillas_libres:
-            self.log.append(f"[ESPERA] Todas las ventanillas ocupadas. Clientes esperando: {len(self.fila)}")
-            return
-        
-        if not self.fila:
-            return
-        
-        # Buscar cliente para asignar (prioritarios primero)
-        cliente = self._obtener_siguiente_cliente()
-        if cliente:
-            ventanilla = ventanillas_libres[0]
-            tiempo_atencion = random.randint(10, 15)
-            
-            self.fila.remove(cliente)
-            ventanilla.asignar_cliente(cliente, tiempo_atencion)
-            
-            self.log.append(f"[ASIGNACION] Cliente {cliente.id} asignado a Ventanilla {ventanilla.id} - Tiempo estimado: {tiempo_atencion}s")
-            
-            if self.interfaz:
-                self.interfaz.eliminar_persona_de_fila(cliente)
-                # Cambiar esta línea:
-                self.interfaz.iniciar_temporizador_ventanilla(ventanilla)
-                
     
     def __str__(self):
         """Representación en string del banco"""
         return f"Banco con {len(self.ventanillas)} ventanillas, {len(self.fila)} en fila"
-    
