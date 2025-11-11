@@ -22,11 +22,13 @@ class Banco:
         self.contador_personas = 0
         self.clientes_atendidos = 0
         
-        # ✅ AGREGAR MENSAJE INICIAL
+        # ✅ AGREGAR MENSAJE INICIAL ACTUALIZADO
         self.log.append("[SISTEMA] 🏦 BIENVENIDO AL SISTEMA DE GESTIÓN BANCARIA")
         self.log.append("[SISTEMA] 📋 SELECCIONE UN ESCENARIO DE DEMOSTRACIÓN:")
         self.log.append("[SISTEMA]   1. 🎭 Demo: Escenario 1 - Con prioridad")
-        self.log.append("[SISTEMA]   2. 🎭 Demo: Escenario 2 - Sin prioridad")
+        self.log.append("[SISTEMA]   2. 🎭 Demo: Escenario 2 - Sin prioridad") 
+        self.log.append("[SISTEMA]   3. 👑 Demo: Escenario 3 - Solo prioritarios")
+        self.log.append("[SISTEMA]   4. 🔴 Demo: Escenario 4 - Ventanillas ocupadas")  # NUEVA LÍNEA
         self.log.append("[SISTEMA]   ⏳ Esperando selección...")
     
     def agregar_persona(self, persona):
@@ -51,7 +53,18 @@ class Banco:
         ventanillas_libres = [v for v in self.ventanillas if v.esta_libre()]
         
         if not ventanillas_libres:
-            self.log.append(f"[ESPERA] Todas las ventanillas ocupadas. Clientes esperando: {len(self.fila)}")
+            # Todas las ventanillas ocupadas - escenario 4
+            if self.fila:
+                ventanillas_ocupadas = len(self.ventanillas) - len(ventanillas_libres)
+                prioritarios_en_espera = sum(1 for p in self.fila if p.prioridad)
+                
+                self.log.append(f"[ESPERA] ⏳ Todas las {ventanillas_ocupadas} ventanillas ocupadas")
+                self.log.append(f"[ESPERA] 📊 {len(self.fila)} clientes esperando ({prioritarios_en_espera} prioritarios)")
+                
+                # Mostrar tiempos restantes de ventanillas
+                for ventanilla in self.ventanillas:
+                    if ventanilla.estado == "atendiendo":
+                        self.log.append(f"[MONITOREO] Ventanilla {ventanilla.id}: {ventanilla.tiempo_restante}s restantes")
             return
         
         if not self.fila:
@@ -66,12 +79,12 @@ class Banco:
             self.fila.remove(cliente)
             ventanilla.asignar_cliente(cliente, tiempo_atencion)
             
-            self.log.append(f"[ASIGNACION] Cliente {cliente.id} asignado a Ventanilla {ventanilla.id} - Tiempo estimado: {tiempo_atencion}s")
+            self.log.append(f"[ASIGNACION] ✅ Cliente {cliente.id} asignado a Ventanilla {ventanilla.id} - Tiempo: {tiempo_atencion}s")
             
             if self.interfaz:
                 self.interfaz.eliminar_persona_de_fila(cliente)
                 self.interfaz.iniciar_temporizador_ventanilla(ventanilla)
-    
+        
     def _obtener_siguiente_cliente(self):
         """
         Obtiene el siguiente cliente a atender respetando prioridades
@@ -98,13 +111,14 @@ class Banco:
         """
         if ventanilla.cliente:
             self.clientes_atendidos += 1
-            self.log.append(f"[ATENCION COMPLETADA] Cliente {ventanilla.cliente.id} finalizado en Ventanilla {ventanilla.id} - {ventanilla.cliente.transaccion}")
+            self.log.append(f"[ATENCION COMPLETADA] ✅ Cliente {ventanilla.cliente.id} finalizado en Ventanilla {ventanilla.id}")
+            self.log.append(f"[TRANSACCION] 📋 {ventanilla.cliente.transaccion} - COMPLETADA")
             ventanilla.cliente.estado = "atendido"
         
         ventanilla.liberar()
-        self.log.append(f"[DESCANSO] Ventanilla {ventanilla.id} en pausa por {ventanilla.tiempo_restante} segundos")
+        self.log.append(f"[DESCANSO] ⏸️ Ventanilla {ventanilla.id} en pausa por {ventanilla.tiempo_restante} segundos")
         self.actualizar_interfaz()
-    
+        
     def liberar_ventanilla(self, ventanilla):
         """
         Libera completamente una ventanilla después del descanso
@@ -114,10 +128,17 @@ class Banco:
         """
         ventanilla.estado = "libre"
         ventanilla.tiempo_restante = 0
-        self.log.append(f"[DISPONIBLE] Ventanilla {ventanilla.id} lista para atender nuevo cliente")
+        
+        # Verificar si hay clientes esperando
+        if self.fila:
+            prioritarios_esperando = sum(1 for p in self.fila if p.prioridad)
+            self.log.append(f"[DISPONIBLE] 🟢 Ventanilla {ventanilla.id} LIBRE - {len(self.fila)} clientes esperando ({prioritarios_esperando} prioritarios)")
+        else:
+            self.log.append(f"[DISPONIBLE] 🟢 Ventanilla {ventanilla.id} LISTA - Esperando clientes")
+        
         self.actualizar_interfaz()
-        self.asignar()
-    
+        self.asignar()  # Intentar asignar inmediatamente
+        
     def obtener_estadisticas(self):
         """
         Obtiene estadísticas actuales del sistema

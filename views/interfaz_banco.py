@@ -137,21 +137,21 @@ class InterfazBanco:
                 font=("Arial", 12), bg='#34495e', fg='#ecf0f1').pack(pady=(0, 10))
     
     def setup_paneles_principales(self):
-        """Configura los paneles principales"""
+        """Configura los paneles principales - DISTRIBUCIÓN OPTIMIZADA"""
         main_frame = tk.Frame(self.root, bg='#2c3e50')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # PANEL 1: Ventanillas de atención (izquierda)
-        self.panel1 = tk.Frame(main_frame, bg='#34495e', relief='raised', bd=2, width=400)
-        self.panel1.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
+        # PANEL 1: Ventanillas de atención (más compacto)
+        self.panel1 = tk.Frame(main_frame, bg='#34495e', relief='raised', bd=2, width=400)  # Reducido
+        self.panel1.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 8))
         self.panel1.pack_propagate(False)
 
-        # PANEL 2: Fila de clientes + Notificaciones (centro)
+        # PANEL 2: Fila de clientes + Notificaciones (tamaño equilibrado)
         self.panel2 = tk.Frame(main_frame, bg='#34495e', relief='raised', bd=2)
-        self.panel2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        self.panel2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
 
-        # PANEL 3: Estadísticas + Controles (derecha)
-        self.panel3 = tk.Frame(main_frame, bg='#34495e', width=400, relief='raised', bd=2)
+        # PANEL 3: Controles + Logs (más ancho para el registro)
+        self.panel3 = tk.Frame(main_frame, bg='#34495e', width=500, relief='raised', bd=2)  # Aumentado
         self.panel3.pack(side=tk.RIGHT, fill=tk.BOTH)
         self.panel3.pack_propagate(False)
     
@@ -361,51 +361,110 @@ class InterfazBanco:
         self._setup_controles()
     
     def _setup_controles(self):
-        """Configura los botones de control"""
+        """Configura los botones de control - VERSIÓN COMPACTA"""
         controls_frame = tk.Frame(self.panel3, bg='#34495e')
-        controls_frame.pack(fill=tk.X, padx=15, pady=15)
+        controls_frame.pack(fill=tk.X, padx=10, pady=10)  # Reducir padding
 
         tk.Label(controls_frame, text="CONTROLES", 
-                font=("Arial", 14, "bold"), bg='#34495e', fg='white').pack(pady=(0, 15))
+                font=("Arial", 12, "bold"), bg='#34495e', fg='white').pack(pady=(0, 8))  # Fuente más pequeña
 
-        # Estilo para botones de demostración
-        demo_button_style = {'font': ('Arial', 10), 'width': 22, 'pady': 8}
+        # Estilo para botones COMPACTOS
+        compact_button_style = {
+            'font': ('Arial', 9),  # Fuente más pequeña
+            'pady': 4,            # Menos padding vertical
+            'padx': 8,            # Menos padding horizontal  
+            'height': 1           # Altura fija mínima
+        }
 
-        # Botones de demostración
-        tk.Button(controls_frame, text="🎭 Demo: Escenario 1 - Con Prioridad", 
+        # Botones de demostración COMPACTOS
+        tk.Button(controls_frame, text="🎭 1 - Con Prioridad", 
                 command=self.demo_escenario_1, bg='#9b59b6', fg='white',
-                **demo_button_style).pack(fill=tk.X, pady=8)
+                **compact_button_style).pack(fill=tk.X, pady=2)  # Menos espacio entre botones
 
-        tk.Button(controls_frame, text="🎭 Demo: Escenario 2 - Sin Prioridad", 
+        tk.Button(controls_frame, text="🎭 2 - Sin Prioridad", 
                 command=self.demo_escenario_2, bg='#3498db', fg='white',
-                **demo_button_style).pack(fill=tk.X, pady=8)
+                **compact_button_style).pack(fill=tk.X, pady=2)
 
-        # Separador para el registro de actividad
-        separator2 = tk.Frame(self.panel3, height=2, bg='#7f8c8d')
-        separator2.pack(fill=tk.X, padx=20, pady=15)
+        tk.Button(controls_frame, text="👑 3 - Solo Prioritarios", 
+                command=self.demo_escenario_3, bg='#e67e22', fg='white',
+                **compact_button_style).pack(fill=tk.X, pady=2)
+
+        tk.Button(controls_frame, text="🔴 4 - Ventanillas Ocupadas", 
+                command=self.demo_escenario_4, bg='#e74c3c', fg='white',
+                **compact_button_style).pack(fill=tk.X, pady=2)
+
+        # Botón adicional para limpiar/reiniciar (opcional)
+        tk.Button(controls_frame, text="🔄 Reiniciar Sistema", 
+                command=self.reiniciar_sistema, bg='#95a5a6', fg='white',
+                **compact_button_style).pack(fill=tk.X, pady=2)
 
         # Sección REGISTRO DE ACTIVIDAD
         self._setup_registro_actividad()
-    
+
+    def limpiar_log(self):
+        """Limpia completamente el registro de actividad"""
+        self.log_text.delete("1.0", tk.END)
+        self.banco.log.clear()
+        self.banco.log.append("[SISTEMA] 📜 Registro limpiado")
+        
+        # Agregar la línea inicial
+        self.log_text.insert(tk.END, "[SISTEMA] 📜 Registro limpiado\n", "sistema")
+        
     def _setup_registro_actividad(self):
-        """Configura el área de registro de actividad"""
+        """Configura el área de registro de actividad - SCROLL MANUAL"""
         log_frame = tk.Frame(self.panel3, bg='#34495e')
-        log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         tk.Label(log_frame, text="REGISTRO DE ACTIVIDAD", 
-                font=("Arial", 14, "bold"), bg='#34495e', fg='white').pack(pady=(0, 10))
+                font=("Arial", 12, "bold"), bg='#34495e', fg='white').pack(pady=(0, 8))
 
         log_text_frame = tk.Frame(log_frame, bg='#2c3e50')
         log_text_frame.pack(fill=tk.BOTH, expand=True)
 
-        log_scrollbar = tk.Scrollbar(log_text_frame)
-        log_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Frame para scrollbars
+        scroll_frame = tk.Frame(log_text_frame, bg='#2c3e50')
+        scroll_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.log_text = tk.Text(log_text_frame, height=15, bg='#1a252f', fg='#ecf0f1',
-                               yscrollcommand=log_scrollbar.set, font=("Consolas", 8),
-                               wrap=tk.WORD)
+        # Scrollbar VERTICAL
+        v_scrollbar = tk.Scrollbar(scroll_frame)
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Scrollbar HORIZONTAL  
+        h_scrollbar = tk.Scrollbar(scroll_frame, orient=tk.HORIZONTAL)
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Text widget con scroll manual
+        self.log_text = tk.Text(scroll_frame, 
+                            bg='#1a252f', 
+                            fg='#ecf0f1',
+                            yscrollcommand=v_scrollbar.set,
+                            xscrollcommand=h_scrollbar.set,
+                            font=("Consolas", 8),
+                            wrap=tk.NONE,  # No wrap para scroll horizontal
+                            width=60,
+                            height=20)
+        
         self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        log_scrollbar.config(command=self.log_text.yview)
+        
+        # Configurar scrollbars
+        v_scrollbar.config(command=self.log_text.yview)
+        h_scrollbar.config(command=self.log_text.xview)
+
+        # Configurar tags de colores
+        self.setup_log_tags()
+
+        # Frame para controles simples del log
+        log_controls_frame = tk.Frame(log_frame, bg='#34495e')
+        log_controls_frame.pack(fill=tk.X, pady=(5, 0))
+
+        # Solo botón para limpiar (scroll siempre es manual)
+        tk.Button(log_controls_frame, text="📜 Limpiar Log", 
+                command=self.limpiar_log,
+                font=("Arial", 8),
+                bg='#7f8c8d', fg='white',
+                padx=10, pady=2).pack(side=tk.LEFT)
+
+        # 🔥 ELIMINAMOS COMPLETAMENTE EL SCROLL AUTOMÁTICO
 
     def setup_log_tags(self):
         """Configura los colores para el registro de actividad"""
@@ -472,7 +531,7 @@ class InterfazBanco:
 
     def demo_escenario_1(self):
         """Demostración del Escenario 1: Atención con prioridad - Clientes mezclados"""
-        self.reiniciar_sistema()
+        self.reiniciar_sistema(False)  # 🔥 NO mostrar mensajes de reinicio
         self.escenario_activo = "con_prioridad"
         
         # Log de inicio
@@ -498,7 +557,7 @@ class InterfazBanco:
 
     def demo_escenario_2(self):
         """Demostración del Escenario 2: Atención sin prioridad - SOLO normales"""
-        self.reiniciar_sistema()
+        self.reiniciar_sistema(False)  # 🔥 NO mostrar mensajes de reinicio
         self.escenario_activo = "sin_prioridad"
         
         # Log de inicio
@@ -520,6 +579,80 @@ class InterfazBanco:
         
         self.actualizar_estadisticas()
         self.actualizar_log()
+    
+    def demo_escenario_3(self):
+        """Demostración del Escenario 3: SOLO clientes prioritarios"""
+        self.reiniciar_sistema(False)  # 🔥 NO mostrar mensajes de reinicio
+        self.escenario_activo = "solo_prioritarios"
+        
+        # Log de inicio
+        self.banco.log.extend([
+            "[DEMO] 🎭 INICIANDO ESCENARIO 3: SOLO CLIENTES PRIORITARIOS",
+            "        👑 Todos los clientes tienen atención preferencial",
+            "        🔄 Orden secuencial equitativo (todos son prioritarios)",
+            "        ⚡ Asignación inmediata sin diferenciación de prioridades"
+        ])
+        
+        # Iniciar simulación
+        self.simulacion_activa = True
+        self.iniciar_simulacion()
+        
+        # Agregar SOLO clientes PRIORITARIOS para el escenario 3
+        for i in range(4):
+            self.banco.contador_personas += 1
+            cliente = Persona(self.banco.contador_personas, prioridad=True)
+            self.banco.agregar_persona(cliente)
+            self.banco.log.append(f"[PRIORIDAD] 👑 Cliente {self.banco.contador_personas} (PRIORITARIO) agregado - Todos tienen prioridad")
+        
+        self.actualizar_estadisticas()
+        self.actualizar_log()
+
+    def demo_escenario_4(self):
+        """Demostración del Escenario 4: Todas las ventanillas ocupadas"""
+        self.reiniciar_sistema(False)  # 🔥 NO mostrar mensajes de reinicio
+        self.escenario_activo = "ventanillas_ocupadas"
+        
+        # Log de inicio
+        self.banco.log.extend([
+            "[DEMO] 🎭 INICIANDO ESCENARIO 4: TODAS LAS VENTANILLAS OCUPADAS",
+            "        🔴 Todas las ventanillas en servicio activo",
+            "        ⏳ Clientes en espera hasta que se libere una ventanilla",
+            "        📊 Monitoreo constante del tiempo restante de atención",
+            "        🎯 Asignación inmediata al liberarse ventanilla (prioritarios primero)"
+        ])
+        
+        # Iniciar simulación
+        self.simulacion_activa = True
+        
+        # Agregar clientes rápidamente para ocupar todas las ventanillas
+        clientes_iniciales = []
+        for i in range(3):  # Ocupar las 3 ventanillas
+            self.banco.contador_personas += 1
+            cliente = Persona(self.banco.contador_personas, prioridad=random.choice([True, False]))
+            clientes_iniciales.append(cliente)
+            self.banco.agregar_persona(cliente)
+        
+        # Agregar más clientes a la fila (mezcla de normales y prioritarios)
+        tipos_clientes = [True, False, True, False, True]  # Mezcla para demostrar prioridad
+        for prioridad in tipos_clientes:
+            self.banco.contador_personas += 1
+            cliente = Persona(self.banco.contador_personas, prioridad)
+            self.banco.agregar_persona(cliente)
+            tipo = "PRIORITARIO" if prioridad else "NORMAL"
+            self.banco.log.append(f"[ESPERA] Cliente {self.banco.contador_personas} ({tipo}) en fila de espera")
+        
+        # Verificar estado de ventanillas
+        ventanillas_ocupadas = sum(1 for v in self.banco.ventanillas if v.estado == "atendiendo")
+        self.banco.log.append(f"[ESTADO] 🏦 {ventanillas_ocupadas}/3 ventanillas ocupadas - {len(self.banco.fila)} clientes en espera")
+        
+        if ventanillas_ocupadas == 3:
+            self.banco.log.append("[MONITOREO] 🔄 Sistema monitoreando liberación de ventanillas...")
+        
+        self.actualizar_estadisticas()
+        self.actualizar_log()
+        
+        # Iniciar generación automática después de 5 segundos
+        self.root.after(5000, self.iniciar_simulacion)
 
     def iniciar_simulacion(self):
         """Inicia simulación automática"""
@@ -537,6 +670,11 @@ class InterfazBanco:
         # Controlar prioridad según escenario
         if self.escenario_activo == "sin_prioridad":
             prioridad = False  # Solo normales
+        elif self.escenario_activo == "solo_prioritarios":
+            prioridad = True   # Solo prioritarios
+        elif self.escenario_activo == "ventanillas_ocupadas":
+            # Para el escenario 4, mezcla de normales y prioritarios
+            prioridad = random.choice([True, False, True, False])  # 50% cada uno
         else:
             prioridad = random.choice([False, False, False, True])  # 75% normales, 25% prioritarios
         
@@ -556,8 +694,12 @@ class InterfazBanco:
         if self.simulacion_activa:
             self.root.after(random.randint(2000, 5000), self.generar_persona_aleatoria)
 
-    def reiniciar_sistema(self):
-        """Reinicia completamente el sistema para empezar desde cero"""
+    def reiniciar_sistema(self, mostrar_mensajes=True):
+        """Reinicia completamente el sistema para empezar desde cero
+        
+        Args:
+            mostrar_mensajes (bool): Si muestra mensajes de reinicio o no
+        """
         # Detener simulación actual
         self.simulacion_activa = False
         
@@ -566,10 +708,14 @@ class InterfazBanco:
         self.banco.contador_personas = 0
         self.banco.clientes_atendidos = 0
         
-        # Limpiar logs
+        # Limpiar los logs del banco
         self.banco.log.clear()
-        self.banco.log.append("[SISTEMA] 🔄 SISTEMA REINICIADO")
-        self.banco.log.append("[SISTEMA] 📊 Empezando desde Cliente 1")
+        
+        # 🔥 SOLO AGREGAR MENSAJES SI SE SOLICITA EXPLÍCITAMENTE
+        if mostrar_mensajes:
+            self.banco.log.append("[SISTEMA] 🔄 SISTEMA REINICIADO")
+            self.banco.log.append("[SISTEMA] 📊 Empezando desde Cliente 1")
+            self.banco.log.append("[SISTEMA] 🏦 Sistema listo para nuevo escenario")
         
         # Liberar todas las ventanillas
         for ventanilla in self.banco.ventanillas:
@@ -577,6 +723,16 @@ class InterfazBanco:
             ventanilla.cliente = None
             ventanilla.tiempo_restante = 0
             ventanilla.estado = "libre"
+        
+        # Limpiar la interfaz visual de logs
+        self.log_text.delete("1.0", tk.END)
+        
+        # Insertar los mensajes actuales en el widget de texto
+        for linea in self.banco.log:
+            if "[SISTEMA]" in linea:
+                self.log_text.insert(tk.END, linea + "\n", "sistema")
+            else:
+                self.log_text.insert(tk.END, linea + "\n")
         
         # Limpiar interfaz visual
         self.limpiar_interfaz_visual()
@@ -587,20 +743,20 @@ class InterfazBanco:
         # Actualizar estadísticas
         self.actualizar_estadisticas()
 
-    def limpiar_fila_automatica(self):
-        """Limpia la fila automáticamente cuando es muy larga"""
-        if self.simulacion_activa and len(self.banco.fila) > 30:
-            clientes_eliminados = len(self.banco.fila) - 15
-            self.banco.fila = self.banco.fila[:15]
-            self.banco.log.append(f"[SISTEMA] Fila limpiada automáticamente: {clientes_eliminados} clientes eliminados. Manteniendo 15 en fila.")
-            
-            # Limpiar elementos visuales
-            for icon_id, texto_id, _ in self.personas_en_fila_gui[15:]:
-                self.canvas_fila.delete(icon_id)
-                self.canvas_fila.delete(texto_id)
-            self.personas_en_fila_gui = self.personas_en_fila_gui[:15]
-            self.actualizar_posiciones_fila()
-            self.actualizar_estadisticas()
+        def limpiar_fila_automatica(self):
+            """Limpia la fila automáticamente cuando es muy larga"""
+            if self.simulacion_activa and len(self.banco.fila) > 30:
+                clientes_eliminados = len(self.banco.fila) - 15
+                self.banco.fila = self.banco.fila[:15]
+                self.banco.log.append(f"[SISTEMA] Fila limpiada automáticamente: {clientes_eliminados} clientes eliminados. Manteniendo 15 en fila.")
+                
+                # Limpiar elementos visuales
+                for icon_id, texto_id, _ in self.personas_en_fila_gui[15:]:
+                    self.canvas_fila.delete(icon_id)
+                    self.canvas_fila.delete(texto_id)
+                self.personas_en_fila_gui = self.personas_en_fila_gui[:15]
+                self.actualizar_posiciones_fila()
+                self.actualizar_estadisticas()
 
     def limpiar_interfaz_visual(self):
         """Limpia todos los elementos visuales de la interfaz"""
@@ -610,6 +766,15 @@ class InterfazBanco:
             self.canvas_fila.delete(texto_id)
         self.personas_en_fila_gui.clear()
         
+        # Limpiar notificaciones de dispositivos móviles
+        for dispositivo in self.dispositivos_moviles:
+            dispositivo['notificacion'].config(text="Esperando...", fg='#7f8c8d')
+            dispositivo['estado'].config(text="🟢 Listo", fg='#27ae60')
+            dispositivo['ultima_notificacion'] = None
+        
+        # Actualizar estado de ventanillas
+        self.actualizar_estado_ventanillas()
+            
         # Limpiar notificaciones de dispositivos móviles
         for dispositivo in self.dispositivos_moviles:
             dispositivo['notificacion'].config(text="Esperando...", fg='#7f8c8d')
@@ -702,40 +867,63 @@ class InterfazBanco:
         self.actualizar_estadisticas()
 
     def actualizar_log(self):
-        """Actualizar el registro de actividad"""
-        self.log_text.delete("1.0", tk.END)
-        for linea in self.banco.log[-20:]:
-            if "[ENTRADA]" in linea:
-                tag = "entrada"
-            elif "[ASIGNACION]" in linea:
-                tag = "asignacion"
-            elif "[ATENCION COMPLETADA]" in linea:
-                tag = "atencion"
-            elif "[PRIORIDAD]" in linea:
-                tag = "prioridad"
-            elif "[DISPONIBLE]" in linea:
-                tag = "disponible"
-            elif "[DESCANSO]" in linea:
-                tag = "descanso"
-            elif "[ESPERA]" in linea:
-                tag = "espera"
-            elif "[ERROR]" in linea:
-                tag = "error"
-            elif "[LIMPIEZA]" in linea:
-                tag = "limpieza"
-            elif "[SISTEMA]" in linea:
-                tag = "sistema"
-            elif "[NOTIFICACION]" in linea:
-                tag = "notificacion"
-            else:
-                tag = ""
-            
-            if tag:
-                self.log_text.insert(tk.END, linea + "\n", tag)
-            else:
-                self.log_text.insert(tk.END, linea + "\n")
+        """Actualizar el registro de actividad - SOLO AGREGAR NUEVAS LÍNEAS"""
+        # Guardar posición actual del scroll ANTES de actualizar
+        scroll_y_position = self.log_text.yview()[0]
+        scroll_x_position = self.log_text.xview()[0]
         
-        self.log_text.see(tk.END)
+        # Obtener el número actual de líneas en el widget
+        lineas_actuales = int(self.log_text.index('end-1c').split('.')[0]) - 1
+        
+        # Solo agregar nuevas líneas si hay más en el banco.log
+        if len(self.banco.log) > lineas_actuales:
+            # Agregar solo las líneas nuevas
+            lineas_nuevas = self.banco.log[lineas_actuales:]
+            
+            for linea in lineas_nuevas:
+                if "[ENTRADA]" in linea:
+                    tag = "entrada"
+                elif "[ASIGNACION]" in linea:
+                    tag = "asignacion"
+                elif "[ATENCION COMPLETADA]" in linea:
+                    tag = "atencion"
+                elif "[PRIORIDAD]" in linea:
+                    tag = "prioridad"
+                elif "[DISPONIBLE]" in linea:
+                    tag = "disponible"
+                elif "[DESCANSO]" in linea:
+                    tag = "descanso"
+                elif "[ESPERA]" in linea:
+                    tag = "espera"
+                elif "[ERROR]" in linea:
+                    tag = "error"
+                elif "[LIMPIEZA]" in linea:
+                    tag = "limpieza"
+                elif "[SISTEMA]" in linea:
+                    tag = "sistema"
+                elif "[NOTIFICACION]" in linea:
+                    tag = "notificacion"
+                elif "[GENERACION]" in linea:
+                    tag = "entrada"
+                elif "[MONITOREO]" in linea:
+                    tag = "sistema"
+                elif "[TRANSACCION]" in linea:
+                    tag = "atencion"
+                elif "[ESTADO]" in linea:
+                    tag = "sistema"
+                elif "[DEMO]" in linea:
+                    tag = "sistema"
+                else:
+                    tag = ""
+                
+                if tag:
+                    self.log_text.insert(tk.END, linea + "\n", tag)
+                else:
+                    self.log_text.insert(tk.END, linea + "\n")
+        
+        # 🔥 RESTAURAR LA POSICIÓN EXACTA DEL SCROLL - SIN MOVERSE
+        self.log_text.yview_moveto(scroll_y_position)
+        self.log_text.xview_moveto(scroll_x_position)
 
     def iniciar_temporizador_ventanilla(self, ventanilla):
         """
